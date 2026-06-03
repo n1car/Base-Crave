@@ -120,6 +120,12 @@ export default function ReservationDetail() {
       setLoading(true)
       const { data } = await reservationsAPI.getById(id!)
       setReservation(data)
+      console.log('=== RESERVATION DEBUG ===')
+      console.log('Full reservation:', JSON.stringify(data, null, 2))
+      console.log('Pack:', JSON.stringify(data.packs, null, 2))
+      console.log('Store:', JSON.stringify(data.packs?.stores, null, 2))
+      console.log('store.image_url:', data.packs?.stores?.image_url)
+      console.log('store.users?.profile_image:', data.packs?.stores?.users?.profile_image)
     } catch (error) {
       console.error('Failed to load reservation:', error)
     } finally {
@@ -179,8 +185,8 @@ export default function ReservationDetail() {
       <div className={styles.card}>
         <div className={styles.storeRow}>
           <div className={styles.storeImageContainer}>
-            {store?.image_url ? (
-              <img src={store.image_url} alt={store.name} className={styles.storeImage} />
+            {store?.image_url || store?.users?.profile_image ? (
+              <img src={store.image_url || store.users!.profile_image} alt={store.name} className={styles.storeImage} />
             ) : (
               <div className={styles.storeImagePlaceholder}>
                 {store?.name?.substring(0, 2).toUpperCase() || 'FR'}

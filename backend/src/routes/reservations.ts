@@ -82,7 +82,7 @@ router.get('/my', authenticate, requireRole(['consumer']), async (req: AuthReque
   try {
     const { data: reservations, error } = await supabase
       .from('reservations')
-      .select('*, packs(*, stores(*))')
+      .select('*, packs(*, stores(*, users:owner_id(id, name, email, profile_image)))')
       .eq('user_id', req.user!.id)
       .order('created_at', { ascending: false });
 
@@ -145,7 +145,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response, next: N
 
     const { data: reservation, error } = await supabase
       .from('reservations')
-      .select('*, packs(*, stores(*))')
+      .select('*, packs(*, stores(*, users:owner_id(id, name, email, profile_image)))')
       .eq('id', id)
       .single();
 
