@@ -128,6 +128,18 @@ export default function ReserveProduct() {
     }
   }
 
+  useEffect(() => {
+    if (reservationData?.status !== 'reserved') return
+    let timerId: ReturnType<typeof setTimeout>
+    const poll = () => {
+      handleRefreshStatus().finally(() => {
+        timerId = setTimeout(poll, 5000)
+      })
+    }
+    timerId = setTimeout(poll, 5000)
+    return () => clearTimeout(timerId)
+  }, [reservationData?.status])
+
   const handleGoToProfile = () => {
     navigate('/profile')
   }
@@ -312,18 +324,9 @@ export default function ReserveProduct() {
                 <span>Please wait</span>
               </div>
               <p className={styles.infoText}>
-                We're waiting for the restaurant to confirm your order. Refresh this page to check status.
+                We're waiting for the restaurant to confirm your order. The page will update automatically.
               </p>
             </div>
-          </div>
-
-          <div className={styles.bottomBar}>
-            <button
-              className={styles.secondaryButton}
-              onClick={handleRefreshStatus}
-            >
-              Refresh Page
-            </button>
           </div>
         </div>
       </div>

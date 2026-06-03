@@ -65,6 +65,8 @@ export default function Profile() {
 
   useEffect(() => {
     loadReservations()
+    const interval = setInterval(loadReservations, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   const loadReservations = async () => {

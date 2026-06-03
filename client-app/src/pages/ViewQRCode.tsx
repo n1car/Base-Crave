@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { reservationsAPI } from '../api/client'
 import { Reservation } from '../types'
@@ -60,25 +60,23 @@ export default function ViewQRCode() {
   const [reservation, setReservation] = useState<Reservation | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (id) {
-      loadReservation(id)
-    }
-  }, [id])
-
-  const loadReservation = async (resId: string) => {
+  const loadReservation = useCallback(async (resId: string) => {
     try {
-      const { data } = await reservationsAPI.getMy()
-      const found = data.find(r => r.id === resId)
-      if (found) {
-        setReservation(found)
-      }
+      const { data } = await reservationsAPI.getById(resId)
+      setReservation(data)
     } catch (error) {
       console.error(error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!id) return
+    loadReservation(id)
+    const interval = setInterval(() => loadReservation(id), 5000)
+    return () => clearInterval(interval)
+  }, [id, loadReservation])
 
   const handleGetDirections = () => {
     if (reservation?.packs?.stores?.latitude && reservation?.packs?.stores?.longitude) {
@@ -106,6 +104,7 @@ export default function ViewQRCode() {
     )
   }
 
+  const isCompleted = reservation.status === 'picked_up'
   const storeName = reservation.packs?.stores?.name || 'Store'
   const storeAddress = reservation.packs?.stores?.address || 'Address not available'
   const packTitle = reservation.packs?.pack_type === 'surprise' ? 'Surprise Pack' : reservation.packs?.title
@@ -115,6 +114,43 @@ export default function ViewQRCode() {
   const pickupCode = reservation.pickup_code || '---'
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${pickupCode}&color=000000&bgcolor=ffffff`
   const formattedCode = pickupCode
+
+  if (isCompleted) {
+    return (
+      <div className={styles.appContainer}>
+        <div className={styles.container}>
+          <header className={styles.header}>
+            <h1 className={styles.headerTitle}>Order Completed!</h1>
+            <p className={styles.headerSubtitle}>Your pack has been picked up successfully</p>
+          </header>
+          <div className={styles.content}>
+            <div className={styles.detailsCard}>
+              <div className={styles.statusRow}>
+                <div className={styles.statusDot} style={{ backgroundColor: '#6b7280' }}></div>
+                <span className={styles.statusText}>Completed</span>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Restaurant</span>
+                <span className={styles.detailValue}>{storeName}</span>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Pack</span>
+                <span className={styles.detailValue}>{packTitle}</span>
+              </div>
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Paid in store</span>
+                <span className={styles.detailValueOrange}>{formatPrice(packPrice * reservation.quantity)}</span>
+              </div>
+            </div>
+            <button className={styles.doneButton} onClick={() => navigate('/profile')}>
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.appContainer}>
       <div className={styles.container}>
@@ -135,8 +171,12 @@ export default function ViewQRCode() {
 
           <div className={styles.detailsCard}>
             <div className={styles.statusRow}>
-              <div className={styles.statusDot}></div>
-              <span className={styles.statusText}>Ready for Pick Up</span>
+              <div className={styles.statusDot} style={{ backgroundColor: reservation.status === 'ready' ? '#22c55e' : '#f59e0b' }}></div>
+              <span className={styles.statusText}>
+                {reservation.status === 'ready' ? 'Ready for Pick Up' :
+                 reservation.status === 'in_process' ? 'In Process' :
+                 reservation.status === 'reserved' ? 'Reserved' : 'Ready for Pick Up'}
+              </span>
             </div>
             
             <div className={styles.detailRow}>

@@ -109,9 +109,10 @@ export default function ReservationDetail() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (id) {
-      loadReservation()
-    }
+    if (!id) return
+    loadReservation()
+    const interval = setInterval(loadReservation, 5000)
+    return () => clearInterval(interval)
   }, [id])
 
   const loadReservation = async () => {
