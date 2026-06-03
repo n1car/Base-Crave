@@ -16,6 +16,7 @@ import Profile from './pages/Profile'
 import Orders from './pages/Orders'
 import OrdersInProgress from './pages/OrdersInProgress'
 import OrdersReady from './pages/OrdersReady'
+import ReservationStatusNotifier from './components/ReservationStatusNotifier'
 
 interface PrivateRouteProps {
   children: React.ReactNode
@@ -43,7 +44,9 @@ function App() {
   }, [])
 
   return (
-    <Routes>
+    <>
+      <ReservationStatusNotifier />
+      <Routes>
       <Route path="/start" element={<Start />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/register" element={<Register />} />
@@ -143,7 +146,8 @@ function App() {
           </PrivateRoute>
         }
       />
-    </Routes>
+      </Routes>
+    </>
   )
 }
 
