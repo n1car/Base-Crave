@@ -14,6 +14,7 @@ import Favorites from './pages/Favorites'
 import Profile from './pages/Profile'
 import ViewQRCode from './pages/ViewQRCode'
 import ReservationDetail from './pages/ReservationDetail'
+import ReservationStatusNotifier from './components/ReservationStatusNotifier'
 
 interface PrivateRouteProps {
   children: React.ReactNode
@@ -70,7 +71,9 @@ function App() {
   }, [])
 
   return (
-    <Routes>
+    <>
+      <ReservationStatusNotifier />
+      <Routes>
       <Route path="/start" element={<Start />} />
       <Route path="/signin" element={<SignIn />} />
       <Route path="/register" element={<Register />} />
@@ -154,7 +157,8 @@ function App() {
           </PrivateRoute>
         }
       />
-    </Routes>
+      </Routes>
+    </>
   )
 }
 
