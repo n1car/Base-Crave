@@ -12,7 +12,7 @@ export default function Orders() {
 
   useEffect(() => {
     loadReservations()
-    const interval = setInterval(loadReservations, 12000)
+    const interval = setInterval(loadReservations, 4000)
     return () => clearInterval(interval)
   }, [])
 
