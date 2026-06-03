@@ -247,9 +247,11 @@ export default function ReservationDetail() {
         <span>Get Directions</span>
       </button>
 
-      <button className={styles.qrButton} onClick={handleViewQR}>
-        View QR Code
-      </button>
+      {reservation.status !== 'picked_up' && (
+        <button className={styles.qrButton} onClick={handleViewQR}>
+          View QR Code
+        </button>
+      )}
     </div>
   )
 }
