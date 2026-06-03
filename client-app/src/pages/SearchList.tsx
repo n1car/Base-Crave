@@ -101,6 +101,7 @@ export default function SearchList() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [favoritePackIds, setFavoritePackIds] = useState<string[]>([])
 
   useEffect(() => {
     getUserLocation().then(setUserLocation)
@@ -111,11 +112,21 @@ export default function SearchList() {
     try {
       const { data } = await storesAPI.getAll()
       setStores(data)
+      const favPackIds = JSON.parse(localStorage.getItem('favorite_pack_ids') || '[]')
+      setFavoritePackIds(Array.isArray(favPackIds) ? favPackIds : [])
     } catch (error) {
       console.error(error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const toggleFavorite = (e: React.MouseEvent, packId: string) => {
+    e.stopPropagation()
+    const isFav = favoritePackIds.includes(packId)
+    const next = isFav ? favoritePackIds.filter((id) => id !== packId) : [...favoritePackIds, packId]
+    setFavoritePackIds(next)
+    localStorage.setItem('favorite_pack_ids', JSON.stringify(next))
   }
 
   const filtered = stores.filter((store) => {
@@ -223,10 +234,8 @@ export default function SearchList() {
                     <div className={styles.cardContent}>
                       <div className={styles.cardHeader}>
                         <h3>{store.name}</h3>
-                        <button className={styles.heartBtn} onClick={(e) => {
-                          e.stopPropagation();
-                        }}>
-                          <HeartIcon filled={false} />
+                        <button className={styles.heartBtn} onClick={(e) => mainPack && toggleFavorite(e, mainPack.id)}>
+                          <HeartIcon filled={mainPack ? favoritePackIds.includes(mainPack.id) : false} />
                         </button>
                       </div>
                       
