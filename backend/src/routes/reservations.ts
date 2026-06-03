@@ -6,8 +6,19 @@ import { ReservationStatus } from '../types';
 
 const router = Router();
 
-function generatePickupCode(): string {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
+async function generateUniquePickupCode(): Promise<string> {
+  let code: string;
+  let exists = true;
+  while (exists) {
+    code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const { data } = await supabase
+      .from('reservations')
+      .select('id')
+      .eq('pickup_code', code)
+      .maybeSingle();
+    exists = !!data;
+  }
+  return code!;
 }
 
 router.post('/', authenticate, requireRole(['consumer']), async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -33,7 +44,7 @@ router.post('/', authenticate, requireRole(['consumer']), async (req: AuthReques
       throw Boom.badRequest('Insufficient quantity available');
     }
 
-    const pickupCode = generatePickupCode();
+    const pickupCode = await generateUniquePickupCode();
 
     const { data: reservation, error } = await supabase
       .from('reservations')
@@ -273,6 +284,51 @@ router.post('/:id/verify', authenticate, requireRole(['store_admin']), async (re
       .from('reservations')
       .update({ status: ReservationStatus.PICKED_UP })
       .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.json({ message: 'Pickup verified successfully', reservation: updatedReservation });
+  } catch (error: any) {
+    next(error);
+  }
+});
+
+router.post('/verify-code', authenticate, requireRole(['store_admin']), async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { pickup_code } = req.body;
+
+    if (!pickup_code) {
+      throw Boom.badRequest('Pickup code required');
+    }
+
+    const code = pickup_code.toUpperCase();
+
+    const { data: reservation, error: findError } = await supabase
+      .from('reservations')
+      .select('*, packs(*, stores(*))')
+      .eq('pickup_code', code)
+      .maybeSingle();
+
+    if (findError || !reservation) {
+      throw Boom.notFound('Reservation not found with that code');
+    }
+
+    if (!reservation.packs?.stores || reservation.packs.stores.owner_id !== req.user!.id) {
+      throw Boom.forbidden('Unauthorized');
+    }
+
+    if (![ReservationStatus.RESERVED, ReservationStatus.READY].includes(reservation.status)) {
+      throw Boom.badRequest('Reservation cannot be verified yet');
+    }
+
+    const { data: updatedReservation, error } = await supabase
+      .from('reservations')
+      .update({ status: ReservationStatus.PICKED_UP })
+      .eq('id', reservation.id)
       .select()
       .single();
 

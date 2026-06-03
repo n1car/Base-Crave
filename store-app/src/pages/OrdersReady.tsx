@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Html5Qrcode } from 'html5-qrcode'
 import { reservationsAPI } from '../api/client'
 import { Reservation } from '../types'
 import BottomNav from '../components/BottomNav'
@@ -28,12 +29,24 @@ export default function OrdersReady() {
   const [codeError, setCodeError] = useState('')
   const [verifying, setVerifying] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [scannerReady, setScannerReady] = useState(false)
+  const scannerRef = useRef<Html5Qrcode | null>(null)
+  const scannerId = 'qr-reader-orders'
+  const scannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     loadReservations()
     const interval = setInterval(loadReservations, 12000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    if (showScanner) {
+      scannerTimerRef.current = setTimeout(() => startScanner(), 200)
+    }
+    return () => { stopScanner() }
+  }, [showScanner])
 
   const loadReservations = async () => {
     try {
@@ -55,10 +68,72 @@ export default function OrdersReady() {
   }
 
   const closeCodeInput = () => {
+    stopScanner()
     setShowCodeInput(false)
     setCurrentOrder(null)
     setCodeInput('')
     setCodeError('')
+    setShowScanner(false)
+  }
+
+  const startScanner = async () => {
+    try {
+      const scanner = new Html5Qrcode(scannerId)
+      scannerRef.current = scanner
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10 },
+        onScanSuccess,
+        (errorMessage) => console.warn('[QR Scanner] Scan failure:', errorMessage)
+      )
+      setScannerReady(true)
+    } catch {
+      setScannerReady(false)
+    }
+  }
+
+  const stopScanner = async () => {
+    if (scannerTimerRef.current) {
+      clearTimeout(scannerTimerRef.current)
+      scannerTimerRef.current = null
+    }
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop()
+        await scannerRef.current.clear()
+      } catch {}
+      scannerRef.current = null
+      setScannerReady(false)
+    }
+  }
+
+  const onScanSuccess = async (decodedText: string) => {
+    await stopScanner()
+    setShowScanner(false)
+    if (!currentOrder) return
+    setCodeInput(decodedText.toUpperCase())
+    setVerifying(true)
+    setCodeError('')
+    try {
+      await reservationsAPI.verify(currentOrder.id, decodedText.toUpperCase())
+      setShowCodeInput(false)
+      setShowSuccess(true)
+      loadReservations()
+    } catch {
+      setCodeError('Código incorrecto. Intenta de nuevo.')
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const openScanner = () => {
+    setCodeError('')
+    setShowScanner(true)
+  }
+
+  const closeScanner = () => {
+    stopScanner()
+    setShowScanner(false)
   }
 
   const handleVerifyCode = async () => {
@@ -173,7 +248,7 @@ export default function OrdersReady() {
 
       {showCodeInput && currentOrder && (
         <div className={styles.modalOverlay} onClick={closeCodeInput}>
-          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+          <div className={`${styles.modal} ${showScanner ? styles.modalWide : ''}`} onClick={e => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h3>Enter Pickup Code</h3>
               <button className={styles.closeBtn} onClick={closeCodeInput}>
@@ -181,26 +256,53 @@ export default function OrdersReady() {
               </button>
             </div>
             <div className={styles.modalContent}>
-              <p className={styles.modalSubtitle}>
-                Ask the customer for their pickup code
-              </p>
-              <input
-                type="text"
-                className={styles.codeInput}
-                value={codeInput}
-                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                placeholder="XXXXXX"
-                maxLength={6}
-                autoFocus
-              />
-              {codeError && <p className={styles.codeError}>{codeError}</p>}
-              <button
-                className={styles.verifyBtn}
-                onClick={handleVerifyCode}
-                disabled={verifying || codeInput.length < 4}
-              >
-                {verifying ? 'Verifying...' : 'Verify Code'}
-              </button>
+              {!showScanner ? (
+                <>
+                  <p className={styles.modalSubtitle}>
+                    Ask the customer for their pickup code
+                  </p>
+                  <input
+                    type="text"
+                    className={styles.codeInput}
+                    value={codeInput}
+                    onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                    placeholder="XXXXXX"
+                    maxLength={6}
+                    autoFocus
+                  />
+                  {codeError && <p className={styles.codeError}>{codeError}</p>}
+                  <button
+                    className={styles.verifyBtn}
+                    onClick={handleVerifyCode}
+                    disabled={verifying || codeInput.length < 4}
+                  >
+                    {verifying ? 'Verifying...' : 'Verify Code'}
+                  </button>
+                  <button className={styles.scanQrBtn} onClick={openScanner}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 3H5a2 2 0 0 0-2 2v2" />
+                      <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                      <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                      <path d="M3 17v2a2 2 0 0 0 2 2h2" />
+                    </svg>
+                    Scan QR Code
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className={styles.modalSubtitle}>Point the camera at the customer's QR code</p>
+                  <div className={styles.scannerContainer}>
+                    <div id={scannerId} className={styles.qrReader} />
+                    {!scannerReady && (
+                      <div className={styles.scannerLoading}>Starting camera...</div>
+                    )}
+                  </div>
+                  {codeError && <p className={styles.codeError}>{codeError}</p>}
+                  <button className={styles.switchBtn} onClick={closeScanner}>
+                    Enter code manually
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

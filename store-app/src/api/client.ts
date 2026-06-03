@@ -116,6 +116,7 @@ export const reservationsAPI = {
   getStore: () => api.get<Reservation[]>('/reservations/store'),
   updateStatus: (id: string, status: 'in_process' | 'ready') => api.patch<Reservation>(`/reservations/${id}/status`, { status }),
   verify: (id: string, pickup_code: string) => api.post(`/reservations/${id}/verify`, { pickup_code }),
+  verifyByCode: (pickup_code: string) => api.post('/reservations/verify-code', { pickup_code }),
   reject: (id: string) => api.post(`/reservations/${id}/reject`),
 }
 

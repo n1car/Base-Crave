@@ -40,7 +40,7 @@ function App() {
 
   React.useEffect(() => {
     checkAuth()
-  }, [checkAuth])
+  }, [])
 
   return (
     <Routes>

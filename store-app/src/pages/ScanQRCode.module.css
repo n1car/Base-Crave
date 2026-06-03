@@ -39,6 +39,66 @@
   font-size: 14px;
 }
 
+.scannerContainer {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto 24px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 1;
+}
+
+.qrReader {
+  width: 100%;
+  height: 100%;
+}
+
+.qrReader :global(video) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scannerLoading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #fff;
+  background: #000;
+}
+
+.scannerLoading svg {
+  width: 48px;
+  height: 48px;
+  opacity: 0.5;
+}
+
+.scannerLoading p {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.switchButton {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--primary);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.switchButton:hover {
+  background: var(--surface);
+}
+
 .error {
   background: #fff1f0;
   color: #a23c31;
@@ -64,6 +124,9 @@
   font-family: monospace;
   letter-spacing: 4px;
   text-transform: uppercase;
+  background: var(--surface);
+  color: var(--text);
+  box-sizing: border-box;
 }
 
 .codeInput:focus {
