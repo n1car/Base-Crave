@@ -14,27 +14,27 @@ const STATUS_COPY: Record<string, { label: string; message: string; icon: string
   reserved: {
     label: 'Reservation pending',
     message: 'Your order is waiting for the store to accept it.',
-    icon: 'WAIT',
+    icon: '⏳',
   },
   in_process: {
     label: 'Order in progress',
     message: 'The store accepted your order and is preparing it now.',
-    icon: 'GO',
+    icon: '🔥',
   },
   ready: {
     label: 'Ready for pickup',
     message: 'Your pack is ready. You can show your QR code at the store.',
-    icon: 'OK',
+    icon: '✅',
   },
   picked_up: {
     label: 'Order completed',
     message: 'Your pickup was confirmed successfully.',
-    icon: 'DONE',
+    icon: '🎉',
   },
   cancelled: {
     label: 'Reservation cancelled',
     message: 'The store cancelled this reservation.',
-    icon: '!',
+    icon: '❌',
   },
 }
 
@@ -46,6 +46,7 @@ function getPackName(reservation: Reservation) {
 export default function ReservationStatusNotifier() {
   const { isAuthenticated } = useAuthStore()
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set())
   const knownStatuses = useRef<Map<string, string>>(new Map())
   const initialized = useRef(false)
 
@@ -62,7 +63,11 @@ export default function ReservationStatusNotifier() {
     const pushToast = (toast: Toast) => {
       setToasts(current => [...current, toast].slice(-3))
       window.setTimeout(() => {
-        setToasts(current => current.filter(item => item.id !== toast.id))
+        setLeavingIds(current => new Set(current).add(toast.id))
+        window.setTimeout(() => {
+          setLeavingIds(current => { const next = new Set(current); next.delete(toast.id); return next })
+          setToasts(current => current.filter(item => item.id !== toast.id))
+        }, 300)
       }, 6000)
     }
 
@@ -107,7 +112,7 @@ export default function ReservationStatusNotifier() {
   return (
     <div className={styles.viewport} aria-live="polite" aria-atomic="true">
       {toasts.map(toast => (
-        <div key={toast.id} className={styles.toast}>
+        <div key={toast.id} className={`${styles.toast} ${leavingIds.has(toast.id) ? styles.toastLeave : ''}`}>
           <div className={styles.icon}>{toast.icon}</div>
           <div>
             <div className={styles.title}>{toast.title}</div>

@@ -3,73 +3,59 @@
   top: 18px;
   left: 50%;
   z-index: 9999;
-  width: min(92vw, 420px);
+  width: min(92vw, 390px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   pointer-events: none;
   transform: translateX(-50%);
 }
 
 .toast {
   position: relative;
-  overflow: hidden;
   padding: 14px 16px 14px 14px;
   display: grid;
-  grid-template-columns: 42px 1fr;
+  grid-template-columns: 44px 1fr;
   gap: 12px;
   color: #fff;
-  background: linear-gradient(135deg, rgba(24, 24, 27, 0.96), rgba(48, 22, 12, 0.96));
-  border: 1px solid rgba(249, 85, 25, 0.35);
-  border-radius: 20px;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
   pointer-events: auto;
-  animation: toastIn 360ms cubic-bezier(0.2, 0.9, 0.2, 1.1);
-}
-
-.toast::after {
-  content: '';
-  position: absolute;
-  inset: auto 14px 8px 14px;
-  height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #f95519, #ffd166);
-  transform-origin: left;
-  animation: shrink 5.8s linear forwards;
+  animation: toastIn 300ms cubic-bezier(0.18, 0.89, 0.32, 1.1);
 }
 
 .icon {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 900;
-  background: radial-gradient(circle at 30% 25%, #ffd166, #f95519 55%, #b93812);
-  box-shadow: 0 10px 24px rgba(249, 85, 25, 0.35);
-  animation: iconPop 700ms ease both;
+  border-radius: 50%;
+  font-size: 20px;
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
 }
 
 .title {
-  margin: 1px 0 3px;
-  font-size: 15px;
-  font-weight: 800;
+  margin: 2px 0 3px;
+  font-size: 14px;
+  font-weight: 700;
   letter-spacing: -0.01em;
+  color: #fff;
 }
 
 .message {
   margin: 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12.5px;
   line-height: 1.35;
 }
 
 @keyframes toastIn {
   from {
     opacity: 0;
-    transform: translateY(-18px) scale(0.96);
+    transform: translateY(-14px) scale(0.95);
   }
   to {
     opacity: 1;
@@ -77,15 +63,20 @@
   }
 }
 
-@keyframes iconPop {
-  0% { transform: scale(0.72) rotate(-8deg); }
-  55% { transform: scale(1.12) rotate(5deg); }
-  100% { transform: scale(1) rotate(0); }
+.toastLeave {
+  animation: toastOut 280ms ease-in forwards;
+  pointer-events: none;
 }
 
-@keyframes shrink {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
 }
 
 @media (max-width: 520px) {

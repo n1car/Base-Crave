@@ -15,27 +15,27 @@ const STATUS_COPY: Record<string, { label: string; message: string; icon: string
   reserved: {
     label: 'New order received',
     message: 'A customer is waiting for you to accept this order.',
-    icon: 'NEW',
+    icon: '📦',
   },
   in_process: {
     label: 'Order in progress',
     message: 'This order is now being prepared.',
-    icon: 'GO',
+    icon: '🔥',
   },
   ready: {
     label: 'Order ready',
     message: 'The customer can pick up this order now.',
-    icon: 'OK',
+    icon: '✅',
   },
   picked_up: {
     label: 'Pickup completed',
     message: 'The order was verified and marked as picked up.',
-    icon: 'DONE',
+    icon: '🎉',
   },
   cancelled: {
     label: 'Order cancelled',
     message: 'This order is no longer active.',
-    icon: '!',
+    icon: '❌',
   },
 }
 
@@ -47,6 +47,7 @@ function getOrderName(reservation: Reservation) {
 export default function ReservationStatusNotifier() {
   const { isAuthenticated } = useAuthStore()
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set())
   const knownStatuses = useRef<Map<string, string>>(new Map())
   const initialized = useRef(false)
 
@@ -63,7 +64,11 @@ export default function ReservationStatusNotifier() {
     const pushToast = (toast: Toast) => {
       setToasts(current => [...current, toast].slice(-3))
       window.setTimeout(() => {
-        setToasts(current => current.filter(item => item.id !== toast.id))
+        setLeavingIds(current => new Set(current).add(toast.id))
+        window.setTimeout(() => {
+          setLeavingIds(current => { const next = new Set(current); next.delete(toast.id); return next })
+          setToasts(current => current.filter(item => item.id !== toast.id))
+        }, 300)
       }, 6000)
     }
 
@@ -111,7 +116,7 @@ export default function ReservationStatusNotifier() {
   return (
     <div className={styles.viewport} aria-live="polite" aria-atomic="true">
       {toasts.map(toast => (
-        <div key={toast.id} className={styles.toast}>
+        <div key={toast.id} className={`${styles.toast} ${leavingIds.has(toast.id) ? styles.toastLeave : ''}`}>
           <div className={styles.icon}>{toast.icon}</div>
           <div>
             <div className={styles.title}>{toast.title}</div>
